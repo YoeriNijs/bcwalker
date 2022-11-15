@@ -1,0 +1,2 @@
+class EmptyContentException(Exception):
+    pass

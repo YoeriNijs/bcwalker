@@ -3,10 +3,12 @@ import time
 import sys
 
 from typing import Final
+from exceptions.empty_content_exception import EmptyContentException
 from util import is_empty
 
 ADDRESS_ENDPOINT_PREFIX: Final = "https://blockchain.info/rawaddr/"
 TRANSACTIONS_ENDPOINT_PREFIX: Final = ""
+
 
 class Walker:
 
@@ -18,7 +20,7 @@ class Walker:
         start_address_response = requests.get(f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}")
         start_address_content = start_address_response.json()
         if is_empty(start_address_content):
-            raise Exception(f"Empty content found for address: {self.__startAddress}")
+            raise EmptyContentException(f"Empty content found for address: {self.__startAddress}")
 
         transactions = self.__find_transactions_for_address(start_address_content)
         self.__verify_transactions(transactions, checked_transactions)
@@ -34,7 +36,7 @@ class Walker:
             output_addresses = self.__find_unique_output_addresses(outputs)
             if self.__endAddress in output_addresses:
                 sys.exit(f">> Relation found between {self.__startAddress} and {self.__endAddress} "
-                     f"via transaction hash {transaction_hash}: https://www.blockchain.com/btc/tx/{transaction_hash}")
+                         f"via transaction hash {transaction_hash}: https://www.blockchain.com/btc/tx/{transaction_hash}")
             else:
                 print(f"No relation found in transaction hash {transaction_hash}")
 
