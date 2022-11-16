@@ -49,7 +49,7 @@ class Walker:
             for end_address in self.__endAddresses:
                 if end_address in output_addresses:
                     sys.exit(
-                        f">> Relation found between {self.__startAddress} and {self.__endAddresses} with a depth of "
+                        f">> Relation found between {self.__startAddress} and {end_address} with a depth of "
                         f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
                         f"https://www.blockchain.com/btc/tx/{transaction_hash}")
 
