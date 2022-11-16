@@ -12,7 +12,7 @@ class BcWalker:
         parser = argparse.ArgumentParser()
         parser.add_argument('-start', '--start')
         parser.add_argument('-end', '--end')
-        parser.add_argument('-silent', '--silent')
+        parser.add_argument('-silent', action='store_true')
 
         args = parser.parse_args()
 
@@ -27,9 +27,9 @@ class BcWalker:
         self.__end_address = end_address
 
         is_silent = args.silent
-        self.__is_silent = True \
-            if is_silent and is_silent.lower() == 'true' \
-            else False
+        self.__is_silent = False \
+            if is_empty(is_silent) \
+            else True
 
     def start(self):
         print(f"Running BcWalker in {'silent' if self.__is_silent else 'verbose'} mode")
