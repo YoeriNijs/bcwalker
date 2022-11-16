@@ -15,7 +15,7 @@ It is also possible to search a relation for multiple addresses. Just add a pipe
 <i>For example: `docker run bcwalker --start <address 1> -end <address 2>|<address 3>|<address 4>`</i>
 
 By default, BCWalker results are visible on stdout. If you do not want this, just pass the silent flag:
-- `docker run bcwalker --start <first bc address> --end <last bc address> -silent`
+- `docker run bcwalker --start <address 1> --end <address 2> -silent`
 
 ## Todo
 - Execute more than one request every ten seconds (currently an api limitation).
