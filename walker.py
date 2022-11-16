@@ -12,19 +12,29 @@ TRANSACTIONS_ENDPOINT_PREFIX: Final = ""
 
 class Walker:
 
-    def __init__(self, start_address, end_address, depth = 0):
+    def __init__(self, start_address, end_address, depth=0):
         self.__startAddress = start_address
         self.__endAddress = end_address
         self.__depth = depth
 
-    def walk_blockchain(self, checked_transactions=[]):
-        start_address_response = requests.get(f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}")
+    def walk_blockchain(self, checked_transactions=[], offset=0):
+        url = f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}?offset={offset}"
+        start_address_response = requests.get(url)
+        print(f"Url: {url}")
+
         start_address_content = start_address_response.json()
         if is_empty(start_address_content):
             raise EmptyContentException(f"Empty content found for address: {self.__startAddress}")
 
         transactions = self.__find_transactions_for_address(start_address_content)
         self.__verify_transactions(transactions, checked_transactions)
+
+        number_transactions = start_address_content['n_tx']
+        if offset < number_transactions:
+            print(f"No relation found in this set of 50 transactions. Try older set of 50 transactions")
+            offset += 50
+            time.sleep(10)
+            self.walk_blockchain(checked_transactions, offset)
 
     def __verify_transactions(self, transactions, checked_transactions):
         for transaction in transactions:
@@ -47,6 +57,8 @@ class Walker:
                 # to verify the end address
                 continue
 
+            time.sleep(10)
+
             # Search end address in output addresses to verify whether there is a relation between them
             for output_address in output_addresses:
                 print("Wait 10 seconds due to api limitations...")
@@ -55,17 +67,11 @@ class Walker:
                 walker = Walker(output_address, self.__endAddress, self.__depth)
                 walker.walk_blockchain(checked_transactions)
 
-            exit(f">> Done. No relation found between {self.__startAddress} and {self.__endAddress}")
-
     def __find_transactions_for_address(self, data):
         address = data['address']
         transactions = data['txs']
-        if is_empty(transactions):
-            raise Exception(f"Empty transactions for address: {address}")
-        number_transactions = data['n_tx']
-        if number_transactions > 50:
-            # For now, we limit the scope. Ultimately, we want to pass the offset, so we can walk over more transactions
-            print(f"Address {address} contains more than 50 transactions. Limit scope to recent 50 transactions")
+        # if is_empty(transactions):
+        #     raise Exception(f"Empty transactions for address: {address}")
         return transactions
 
     def __find_unique_output_addresses(self, outputs):
