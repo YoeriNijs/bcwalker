@@ -15,4 +15,4 @@ By default, BCWalker results are visible on stdout. If you do not want this, jus
 - `docker run bcwalker --start <first bc address> --end <last bc address> -silent`
 
 ## Todo
-- Execute more than one request every ten seconds (currently an api limitation);
+- Execute more than one request every ten seconds (currently an api limitation).
