@@ -7,7 +7,6 @@ from exceptions.empty_content_exception import EmptyContentException
 from util import is_empty
 
 ADDRESS_ENDPOINT_PREFIX: Final = "https://blockchain.info/rawaddr/"
-TRANSACTIONS_ENDPOINT_PREFIX: Final = ""
 
 
 class Walker:
