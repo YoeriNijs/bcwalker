@@ -40,6 +40,7 @@ class Walker:
         for transaction in transactions:
             transaction_hash = transaction['hash']
             if transaction_hash in checked_transactions:
+                # Do not check transactions that we have encountered before
                 continue
             checked_transactions.append(transaction_hash)
 
@@ -49,13 +50,12 @@ class Walker:
                 sys.exit(f">> Relation found between {self.__startAddress} and {self.__endAddress} with a depth of "
                          f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
                          f"https://www.blockchain.com/btc/tx/{transaction_hash}")
-            else:
-                print(f"No relation found in transaction hash {transaction_hash}")
-
-            if self.__startAddress in output_addresses:
+            elif self.__startAddress in output_addresses:
                 # We are not interested outputs that are the same as the start addresses, since we only want
                 # to verify the end address
                 continue
+            else:
+                print(f"No relation found in transaction hash {transaction_hash}")
 
             self.__api_wait()
 
