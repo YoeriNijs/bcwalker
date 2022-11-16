@@ -12,9 +12,10 @@ TRANSACTIONS_ENDPOINT_PREFIX: Final = ""
 
 class Walker:
 
-    def __init__(self, start_address, end_address):
+    def __init__(self, start_address, end_address, depth = 0):
         self.__startAddress = start_address
         self.__endAddress = end_address
+        self.__depth = depth
 
     def walk_blockchain(self, checked_transactions=[]):
         start_address_response = requests.get(f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}")
@@ -35,8 +36,9 @@ class Walker:
             outputs = transaction['out']
             output_addresses = self.__find_unique_output_addresses(outputs)
             if self.__endAddress in output_addresses:
-                sys.exit(f">> Relation found between {self.__startAddress} and {self.__endAddress} "
-                         f"via transaction hash {transaction_hash}: https://www.blockchain.com/btc/tx/{transaction_hash}")
+                sys.exit(f">> Relation found between {self.__startAddress} and {self.__endAddress} with a depth of "
+                         f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
+                         f"https://www.blockchain.com/btc/tx/{transaction_hash}")
             else:
                 print(f"No relation found in transaction hash {transaction_hash}")
 
@@ -50,7 +52,7 @@ class Walker:
                 print("Wait 10 seconds due to api limitations...")
                 time.sleep(10)
 
-                walker = Walker(output_address, self.__endAddress)
+                walker = Walker(output_address, self.__endAddress, self.__depth)
                 walker.walk_blockchain(checked_transactions)
 
             exit(f">> Done. No relation found between {self.__startAddress} and {self.__endAddress}")
