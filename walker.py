@@ -12,9 +12,9 @@ TRANSACTIONS_ENDPOINT_PREFIX: Final = ""
 
 class Walker:
 
-    def __init__(self, start_address, end_address, depth=0):
+    def __init__(self, start_address, end_addresses, depth=0):
         self.__startAddress = start_address
-        self.__endAddress = end_address
+        self.__endAddresses = end_addresses
         self.__depth = depth
 
     def walk_blockchain(self, checked_transactions=[], offset=0):
@@ -46,11 +46,14 @@ class Walker:
 
             outputs = transaction['out']
             output_addresses = self.__find_unique_output_addresses(outputs)
-            if self.__endAddress in output_addresses:
-                sys.exit(f">> Relation found between {self.__startAddress} and {self.__endAddress} with a depth of "
-                         f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
-                         f"https://www.blockchain.com/btc/tx/{transaction_hash}")
-            elif self.__startAddress in output_addresses:
+            for end_address in self.__endAddresses:
+                if end_address in output_addresses:
+                    sys.exit(
+                        f">> Relation found between {self.__startAddress} and {self.__endAddresses} with a depth of "
+                        f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
+                        f"https://www.blockchain.com/btc/tx/{transaction_hash}")
+
+            if self.__startAddress in output_addresses:
                 # We are not interested outputs that are the same as the start addresses, since we only want
                 # to verify the end address
                 continue
@@ -62,7 +65,7 @@ class Walker:
             # Search end address in output addresses to verify whether there is a relation between them
             for output_address in output_addresses:
                 self.__api_wait()
-                walker = Walker(output_address, self.__endAddress, self.__depth)
+                walker = Walker(output_address, self.__endAddresses, self.__depth)
                 walker.walk_blockchain(checked_transactions)
 
     def __find_unique_output_addresses(self, outputs):

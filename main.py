@@ -21,10 +21,10 @@ class BcWalker:
             raise InvalidArgumentException("Start address is invalid")
         self.__start_address = start_address
 
-        end_address = args.end
-        if is_empty(end_address):
+        end_addresses = args.end
+        if is_empty(end_addresses):
             raise InvalidArgumentException("End address is invalid")
-        self.__end_address = end_address
+        self.__end_addresses = end_addresses.split('|')
 
         is_silent = args.silent
         self.__is_silent = False \
@@ -45,12 +45,12 @@ class BcWalker:
             sys.exit(f"Done. No relations found.")
 
     def __run_walker(self):
-        print(f"Start analyzing blockchain for start '{self.__start_address}' and end '{self.__end_address}'...")
+        print(f"Start analyzing blockchain for start '{self.__start_address}' and end '{self.__end_addresses}'...")
         try:
-            walker = Walker(self.__start_address, self.__end_address)
+            walker = Walker(self.__start_address, self.__end_addresses)
             walker.walk_blockchain()
         except Exception as e:
-            sys.exit(f"Cannot walk over start '{self.__start_address}' and end '{self.__end_address}':", e)
+            sys.exit(f"Cannot walk over start '{self.__start_address}' and end '{self.__end_addresses}':", e)
 
 
 # Fire it up!
