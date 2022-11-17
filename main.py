@@ -31,7 +31,7 @@ class BcWalker:
             if is_empty(is_silent) \
             else True
 
-    def start(self):
+    def start(self) -> None:
         print(f"Running BcWalker in {'silent' if self.__is_silent else 'verbose'} mode")
 
         log_file_name = f"results/log_{time.time()}.txt"
@@ -44,7 +44,7 @@ class BcWalker:
             self.__run_walker()
             sys.exit(f"Done. No relations found.")
 
-    def __run_walker(self):
+    def __run_walker(self) -> None:
         print(f"Start analyzing blockchain for start '{self.__start_address}' and end '{self.__end_addresses}'...")
         try:
             walker = Walker(self.__start_address, self.__end_addresses)

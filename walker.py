@@ -16,7 +16,7 @@ class Walker:
         self.__endAddresses = end_addresses
         self.__depth = depth
 
-    def walk_blockchain(self, checked_transactions=[], offset=0):
+    def walk_blockchain(self, checked_transactions=[], offset=0) -> None:
         url = f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}?offset={offset}"
         start_address_response = requests.get(url)
         print(f"Url: {url}")
@@ -35,7 +35,7 @@ class Walker:
             self.__api_wait()
             self.walk_blockchain(checked_transactions, offset)
 
-    def __verify_transactions(self, transactions, checked_transactions):
+    def __verify_transactions(self, transactions, checked_transactions) -> None:
         for transaction in transactions:
             transaction_hash = transaction['hash']
             if transaction_hash in checked_transactions:
@@ -67,7 +67,7 @@ class Walker:
                 walker = Walker(output_address, self.__endAddresses, self.__depth)
                 walker.walk_blockchain(checked_transactions)
 
-    def __find_unique_output_addresses(self, outputs):
+    def __find_unique_output_addresses(self, outputs) -> list[str]:
         output_addresses = []
         for output in outputs:
             output_address = output['addr']
@@ -75,6 +75,6 @@ class Walker:
                 output_addresses.append(output_address)
         return output_addresses
 
-    def __api_wait(self):
+    def __api_wait(self) -> None:
         print("Wait 10 seconds due to api limitations...")
         time.sleep(10)
