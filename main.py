@@ -1,6 +1,5 @@
 import argparse
 import sys
-import time
 import logging
 import os
 
@@ -8,6 +7,7 @@ from typing import Final
 from exceptions.invalid_argument_exception import InvalidArgumentException
 from util import is_empty
 from walker import Walker
+from datetime import datetime
 
 TRANSACTION_ENDPOINT: Final = "https://api.haskoin.com/{}/transaction/{}"
 
@@ -15,7 +15,7 @@ TRANSACTION_ENDPOINT: Final = "https://api.haskoin.com/{}/transaction/{}"
 class BcWalker:
 
     def __init__(self):
-        self.__log_file = f"{os.getcwd()}/results/bcwalker_log_{time.time()}.txt"
+        self.__log_file = self.__create_log_file_name()
         logging.basicConfig(filename=self.__log_file,
                             filemode='a',
                             format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -56,6 +56,11 @@ class BcWalker:
             logging.error(f"Cannot walk over start '{self.__start_address}' and end '{self.__end_addresses}':", e)
         logging.info(f"Done. No relations found.")
         sys.exit(f"Logfile written to {self.__log_file}")
+
+    def __create_log_file_name(self) -> str:
+        cwd = os.getcwd()
+        datetime_now = str(datetime.now()).replace(' ', '_')
+        return f"{cwd}/results/bcwalker_log_{datetime_now}.txt"
 
 
 # Fire it up!
