@@ -50,7 +50,7 @@ class BcWalker:
     def start(self) -> None:
         logging.info(f"Start analyzing blockchain for start '{self.__start_address}' and end '{self.__end_addresses}'...")
         try:
-            walker = Walker(self.__start_address, self.__end_addresses, self.__bitcoin_type)
+            walker = Walker(self.__start_address, self.__end_addresses, self.__bitcoin_type, self.__log_file)
             walker.walk_blockchain()
         except Exception as e:
             logging.error(f"Cannot walk over start '{self.__start_address}' and end '{self.__end_addresses}':", e)

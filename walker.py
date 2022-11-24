@@ -12,16 +12,21 @@ TRANSACTION_ENDPOINT: Final = "https://api.haskoin.com/{}/transaction/{}"
 
 class Walker:
 
-    def __init__(self, start_address, end_addresses, bitcoin_type, depth=0):
+    def __init__(self, start_address, end_addresses, bitcoin_type, log_file, depth=0):
         self.__start_address = start_address
         self.__end_addresses = end_addresses
-        self.__depth = depth
+        self.__log_file = log_file
         self.__bitcoin_type = bitcoin_type
+        self.__depth = depth
 
     def walk_blockchain(self, checked_transactions=[]) -> None:
         url = ADDRESS_TRANSACTIONS_ENDPOINT.format(self.__bitcoin_type, self.__start_address)
         transactions = requests.get(url).json()
         for transaction in transactions:
+            if transaction == 'error':
+                logging.error(f"Cannot retrieve transaction for start address: {self.__start_address}")
+                sys.exit(f"Logfile written to {self.__log_file}")
+
             transaction_id = transaction['txid']
             logging.info(f"Checking transaction id: {transaction_id}")
 
@@ -44,18 +49,18 @@ class Walker:
             return
 
         if output_address in self.__end_addresses:
-            log = f"Relation found between {self.__start_address} and {output_address} with a depth of " \
-                  f"{self.__depth}. Latest transaction hash for this relation: {transaction_id}. Details: " \
-                  f"{TRANSACTION_ENDPOINT.format(self.__bitcoin_type, transaction_id)}"
-            logging.info(log)
-            sys.exit(log)
+            logging.info(f"Relation found between {self.__start_address} and {output_address} with a depth of "
+                         f"{self.__depth}. Latest transaction hash for this relation: {transaction_id}. Details: "
+                         f"{TRANSACTION_ENDPOINT.format(self.__bitcoin_type, transaction_id)}")
+            sys.exit(f"Logfile written to {self.__log_file}")
 
         thread = Thread(target=self.__threaded_walk,
-                        args=(output_address, self.__end_addresses,
-                              self.__bitcoin_type, self.__depth, checked_transactions))
+                        args=(output_address, self.__end_addresses, self.__bitcoin_type,
+                              self.__log_file, self.__depth, checked_transactions))
         thread.start()
         thread.join()
 
-    def __threaded_walk(self, output_address, end_addresses, bitcoin_type, depth, checked_transactions) -> None:
-        walker = Walker(output_address, end_addresses, bitcoin_type, depth)
+    def __threaded_walk(self, output_address, end_addresses, bitcoin_type,
+                        log_file, depth, checked_transactions) -> None:
+        walker = Walker(output_address, end_addresses, bitcoin_type, log_file, depth)
         walker.walk_blockchain(checked_transactions)
