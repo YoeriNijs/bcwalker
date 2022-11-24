@@ -1,80 +1,61 @@
 import requests
-import time
 import sys
+import logging
 
 from typing import Final
-from exceptions.empty_content_exception import EmptyContentException
-from util import is_empty
+from threading import Thread
 
 ADDRESS_ENDPOINT_PREFIX: Final = "https://blockchain.info/rawaddr/"
+ADDRESS_TRANSACTIONS_ENDPOINT: Final = "https://api.haskoin.com/{}/address/{}/transactions/full"
+TRANSACTION_ENDPOINT: Final = "https://api.haskoin.com/{}/transaction/{}"
 
 
 class Walker:
 
-    def __init__(self, start_address, end_addresses, depth=0):
-        self.__startAddress = start_address
-        self.__endAddresses = end_addresses
+    def __init__(self, start_address, end_addresses, bitcoin_type, depth=0):
+        self.__start_address = start_address
+        self.__end_addresses = end_addresses
         self.__depth = depth
+        self.__bitcoin_type = bitcoin_type
 
-    def walk_blockchain(self, checked_transactions=[], offset=0) -> None:
-        url = f"{ADDRESS_ENDPOINT_PREFIX}{self.__startAddress}?offset={offset}"
-        start_address_response = requests.get(url)
-        print(f"Url: {url}")
-
-        data = start_address_response.json()
-        if is_empty(data):
-            raise EmptyContentException(f"Empty content found for address: {self.__startAddress}")
-
-        transactions = data['txs']
-        self.__verify_transactions(transactions, checked_transactions)
-
-        number_transactions = data['n_tx']
-        if offset < number_transactions:
-            print(f"No relation found in this set of 50 transactions. Try older set of 50 transactions")
-            offset += 50
-            self.__api_wait()
-            self.walk_blockchain(checked_transactions, offset)
-
-    def __verify_transactions(self, transactions, checked_transactions) -> None:
+    def walk_blockchain(self, checked_transactions=[]) -> None:
+        url = ADDRESS_TRANSACTIONS_ENDPOINT.format(self.__bitcoin_type, self.__start_address)
+        transactions = requests.get(url).json()
         for transaction in transactions:
-            transaction_hash = transaction['hash']
-            if transaction_hash in checked_transactions:
-                # Do not check transactions that we have encountered before
+            transaction_id = transaction['txid']
+            logging.info(f"Checking transaction id: {transaction_id}")
+
+            if transaction_id in checked_transactions:
+                logging.debug(f"Transaction id {transaction_id} is in checked transactions, so skip")
                 continue
-            checked_transactions.append(transaction_hash)
 
-            outputs = transaction['out']
-            output_addresses = self.__find_unique_output_addresses(outputs)
-            for end_address in self.__endAddresses:
-                if end_address in output_addresses:
-                    sys.exit(
-                        f">> Relation found between {self.__startAddress} and {end_address} with a depth of "
-                        f"{self.__depth}. Latest transaction hash for this relation: {transaction_hash}: "
-                        f"https://www.blockchain.com/btc/tx/{transaction_hash}")
+            checked_transactions.append(transaction_id)
 
-            if self.__startAddress in output_addresses:
-                # We are not interested outputs that are the same as the start addresses, since we only want
-                # to verify the end address
-                continue
-            else:
-                print(f"No relation found in transaction hash {transaction_hash}")
+            self.__depth += 1
 
-            self.__api_wait()
+            outputs = transaction['outputs']
+            for output in outputs:
+                self.__check_output(output, transaction_id, checked_transactions)
 
-            # Search end address in output addresses to verify whether there is a relation between them
-            for output_address in output_addresses:
-                self.__api_wait()
-                walker = Walker(output_address, self.__endAddresses, self.__depth)
-                walker.walk_blockchain(checked_transactions)
+    def __check_output(self, output, transaction_id, checked_transactions) -> None:
+        output_address = output['address'].strip()
+        if output_address == self.__start_address:
+            logging.debug(f"Output address {output_address} is the same as the start address, so skip")
+            return
 
-    def __find_unique_output_addresses(self, outputs) -> list[str]:
-        output_addresses = []
-        for output in outputs:
-            output_address = output['addr']
-            if output_address not in output_addresses:
-                output_addresses.append(output_address)
-        return output_addresses
+        if output_address in self.__end_addresses:
+            log = f"Relation found between {self.__start_address} and {output_address} with a depth of " \
+                  f"{self.__depth}. Latest transaction hash for this relation: {transaction_id}. Details: " \
+                  f"{TRANSACTION_ENDPOINT.format(self.__bitcoin_type, transaction_id)}"
+            logging.info(log)
+            sys.exit(log)
 
-    def __api_wait(self) -> None:
-        print("Wait 10 seconds due to api limitations...")
-        time.sleep(10)
+        thread = Thread(target=self.__threaded_walk,
+                        args=(output_address, self.__end_addresses,
+                              self.__bitcoin_type, self.__depth, checked_transactions))
+        thread.start()
+        thread.join()
+
+    def __threaded_walk(self, output_address, end_addresses, bitcoin_type, depth, checked_transactions) -> None:
+        walker = Walker(output_address, end_addresses, bitcoin_type, depth)
+        walker.walk_blockchain(checked_transactions)
